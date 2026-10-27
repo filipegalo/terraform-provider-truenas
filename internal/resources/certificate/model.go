@@ -311,8 +311,7 @@ func responseToModel(ctx context.Context, api *certificateAPI, m *CertificateMod
 	// defaults to true, and a null/unknown value (older state, or an import that
 	// carried no value) reads as true, so existing certificates are unaffected.
 	// Imported keys are the user's own input and always kept. (#49)
-	storeKey := m.StorePrivatekey.IsNull() || m.StorePrivatekey.IsUnknown() || m.StorePrivatekey.ValueBool()
-	if m.CreateType.ValueString() == CreateTypeACME || !storeKey {
+	if m.CreateType.ValueString() == CreateTypeACME || !storesPrivatekey(m.StorePrivatekey) {
 		m.Privatekey = types.StringNull()
 	} else {
 		m.Privatekey = types.StringPointerValue(api.Privatekey)
@@ -419,13 +418,21 @@ const (
 	CreateTypeACME        = "CERTIFICATE_CREATE_ACME"
 )
 
+// storesPrivatekey reports the effective store_privatekey value. A null or
+// unknown value (state written before the attribute existed, or an import)
+// reads as true, the default and the behavior before the attribute was
+// added. (#49)
+func storesPrivatekey(storePrivatekey types.Bool) bool {
+	return storePrivatekey.IsNull() || storePrivatekey.IsUnknown() || storePrivatekey.ValueBool()
+}
+
 // storePrivatekeyFalseRejected reports whether a store_privatekey = false
 // request is invalid for the given create_type. false is only meaningful for a
 // server-generated CSR (CERTIFICATE_CREATE_CSR); the imported create types
 // carry the private key in configuration, so keeping it out of state is
 // rejected. A null/unknown or true value is always allowed. (#49)
 func storePrivatekeyFalseRejected(createType string, storePrivatekey types.Bool) bool {
-	if storePrivatekey.IsNull() || storePrivatekey.IsUnknown() || storePrivatekey.ValueBool() {
+	if storesPrivatekey(storePrivatekey) {
 		return false
 	}
 	return createType == CreateTypeImported || createType == CreateTypeImportedCSR

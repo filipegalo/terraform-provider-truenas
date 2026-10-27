@@ -49,9 +49,9 @@ func TestSchema_IDComputedUseStateForUnknown(t *testing.T) {
 // TestSchema_StorePrivatekey verifies the #49 store_privatekey attribute is an
 // Optional+Computed bool (Default true, filled by the framework), is NOT
 // WriteOnly (it is a plain behavior flag, not a secret), and carries plan
-// modifiers (UseStateForUnknown so an upgrade from state that predates the
-// attribute shows no diff, and RequiresReplace since the key cannot be added to
-// or removed from an existing certificate in place).
+// modifiers (UseStateForUnknown, and replaceIfStorePrivatekeyChanged since the
+// key cannot be added to or removed from an existing certificate in place;
+// see TestStorePrivatekeyChanged for the upgrade-from-null case).
 func TestSchema_StorePrivatekey(t *testing.T) {
 	s := resourceSchema()
 
@@ -72,7 +72,7 @@ func TestSchema_StorePrivatekey(t *testing.T) {
 		t.Error("'store_privatekey' should have a default (true)")
 	}
 	if len(attr.PlanModifiers) == 0 {
-		t.Error("'store_privatekey' should have plan modifiers (UseStateForUnknown + RequiresReplace)")
+		t.Error("'store_privatekey' should have plan modifiers (UseStateForUnknown + replaceIfStorePrivatekeyChanged)")
 	}
 }
 

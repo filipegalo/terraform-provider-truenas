@@ -6,6 +6,15 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Fixed
+- `truenas_certificate`: upgrading from a release before `store_privatekey`
+  (< 1.5.15) no longer plans to replace every certificate. The attribute's
+  default plans `true` against the `null` in older state, and `RequiresReplace`
+  treated that as a change, so a CSR and the ACME certificate chained to it
+  through `csr_id` were destroyed and recreated (or the plan failed outright
+  under `prevent_destroy`). A null prior value now reads as `true` and is
+  recorded in place; only a change of the effective value replaces. (#49)
+
 ## [1.5.19] - 2026-10-26
 
 ### Fixed
